@@ -1,0 +1,52 @@
+image: node:16
+
+stages:
+  - build
+  - lint
+  - test
+  - test-selenium
+
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+
+cache:
+  paths:
+    - node_modules
+
+build-calculator-ui:
+  stage: build
+  script: 
+    - npm install
+    - npm run build
+
+lint-calculator-ui:
+  stage: lint
+  script:
+    - npm install
+    - npm run lint
+
+test-calculator-ui:
+  stage: test
+  script:
+    - npm install
+    - npm run test
+
+test-selenium:
+  stage: test-selenium
+  image: python:3.9
+  before_script:
+    - apt-get update
+    - apt-get install -y wget unzip
+    - wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+    - echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
+    - apt-get update
+    - apt-get install -y google-chrome-stable
+    - CHROMEDRIVER_VERSION=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+    - mkdir -p /chromedriver
+    - wget -q --continue -P /chromedriver "http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
+    - unzip /chromedriver/chromedriver* -d /chromedriver
+    - export PATH=$PATH:/chromedriver
+    - echo "Chromedriver está instalado en: $(which chromedriver)"
+  script:
+    - pip install selenium pytest
+    - pytest tests/
